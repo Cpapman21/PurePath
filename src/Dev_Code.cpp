@@ -8,6 +8,11 @@
 
 // Include Particle Device OS APIs
 #include "Particle.h"
+#include "Adafruit_ADXL343.h"
+#include "Adafruit_Sensor.h"
+#include "PCF85063A.h"
+#include <Adafruit_BusIO_Register.h>
+
 
 // Let Device OS manage the connection to the Particle Cloud
 SYSTEM_MODE(AUTOMATIC);
@@ -22,6 +27,7 @@ SerialLogHandler logHandler(LOG_LEVEL_INFO);
 // setup() runs once, when the device is first turned on
 void setup() {
   // Put initialization like pinMode and begin functions here
+  Serial.begin(9600);
 }
 
 // loop() runs over and over again, as quickly as it can execute.
@@ -33,3 +39,5 @@ void loop() {
   // Particle.publish("Hello world!");
   // delay( 10 * 1000 ); // milliseconds and blocking - see docs for more info!
 }
+
+
