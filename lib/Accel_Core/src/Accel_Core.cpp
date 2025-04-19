@@ -1,8 +1,6 @@
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_ADXL343.h>
+#include "Accel_Core.h"
 
-/* Assign a unique ID to this sensor at the same time */
+
 Adafruit_ADXL343 accel = Adafruit_ADXL343(12345);
 
 /** The input pins to enable the interrupt on, connected to INT1 and INT2 on the ADXL. */
@@ -63,18 +61,6 @@ void int2_isr(void)
 /** Configures the HW interrupts on the ADXL343 and the target MCU. */
 void config_interrupts(void)
 {
-  /* NOTE: Once an interrupt fires on the ADXL you can read a register
-   *  to know the source of the interrupt, but since this would likely
-   *  happen in the 'interrupt context' performing an I2C read is a bad
-   *  idea since it will block the device from handling other interrupts
-   *  in a timely manner.
-   *
-   *  The best approach is to try to make use of only two interrupts on
-   *  two different interrupt pins, so that when an interrupt fires, based
-   *  on the 'isr' function that is called, you already know the int source.
-   */
-
-  /* Attach interrupt inputs on the MCU. */
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(INPUT_PIN_INT1, INPUT);
   pinMode(INPUT_PIN_INT2, INPUT);
@@ -102,48 +88,6 @@ void config_interrupts(void)
   g_int_config_map.bits.single_tap = ADXL343_INT1;
   g_int_config_map.bits.data_ready = ADXL343_INT2;
   accel.mapInterrupts(g_int_config_map);
-}
-
-void setup(void)
-{
-  Serial.begin(9600);
-  while (!Serial);
-  Serial.println("ADXL343 Interrupt Tester"); Serial.println("");
-
-  /* Initialise the sensor */
-  if(!accel.begin())
-  {
-    /* There was a problem detecting the ADXL343 ... check your connections */
-    Serial.println("Ooops, no ADXL343 detected ... Check your wiring!");
-    while(1);
-  }
-
-  /* Set the range to whatever is appropriate for your project */
   accel.setRange(ADXL343_RANGE_16_G);
-  // displaySetRange(ADXL343_RANGE_8_G);
-  // displaySetRange(ADXL343_RANGE_4_G);
-  // displaySetRange(ADXL343_RANGE_2_G);
-
-
-  /* Configure the HW interrupts. */
-  config_interrupts();
-
-  Serial.println("ADXL343 init complete. Waiting for INT activity.");
 }
 
-void loop(void)
-{
-  /* Get a new sensor event */
-  sensors_event_t event;
-  accel.getEvent(&event);
-  delay(10);
-
-  while (g_ints_fired) {
-      Serial.println("INT detected!");
-      Serial.print("\tOVERRUN Count:    "); Serial.println(g_int_stats.overrun, DEC);
-      Serial.print("\tDATA_READY Count: "); Serial.println(g_int_stats.data_ready, DEC);
-
-      /* Decrement the unhandled int counter. */
-      g_ints_fired--;
-  }
-}

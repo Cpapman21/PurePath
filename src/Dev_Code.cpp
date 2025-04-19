@@ -15,193 +15,154 @@
 #include <Adafruit_BusIO_Register.h>
 #include "DFRobot_SHT20.h"
 #include "SensirionI2CSen5x.h"
+#include "SparkFunBQ27441.h"
+#include "BQ27441_Definitions.h"
 
 
-// Let Device OS manage the connection to the Particle Cloud
 SYSTEM_MODE(AUTOMATIC);
-
-// Run the application and system concurrently in separate threads
 SYSTEM_THREAD(ENABLED);
-
-// Show system, cloud connectivity, and application logs over USB
-// View logs with CLI using 'particle serial monitor --follow'
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
-Adafruit_ADXL343 accel = Adafruit_ADXL343(12345);
-// setup() runs once, when the device is first turned on
-#define INPUT_PIN_INT1   (D3) // Uno = (2)
-#define INPUT_PIN_INT2   (6) // Uno = (3)
 
-struct adxl_int_stats {
-    uint32_t data_ready;
-    uint32_t single_tap;
-    uint32_t double_tap;
-    uint32_t activity;
-    uint32_t inactivity;
-    uint32_t freefall;
-    uint32_t watermark;
-    uint32_t overrun;
-    uint32_t total;
+enum System_State {
+    Idle,
+    Run,
+    Test
 };
 
-/** Global stats block, incremented inside the interrupt handler(s). */
-struct adxl_int_stats g_int_stats = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+System_State Current_State;
 
-/** Global counter to track the numbers of unused interrupts fired. */
-uint32_t g_ints_fired = 0;
+const int GPS_ENA_Pin = D8;
+const int Accel_ENA_Pin = D7;
 
-/** Global variable to determine which interrupt(s) are enabled on the ADXL343. */
-int_config g_int_config_enabled = { 0 };
+const unsigned int BATTERY_CAPACITY = 850; // e.g. 850mAh battery
 
-/** Global variables to determine which INT pin interrupt(s) are mapped to on the ADXL343. */
-int_config g_int_config_map = { 0 };
-
-/** Interrupt service routine for INT1 events. */
-void int1_isr(void)
+void setupBQ27441(void)
 {
-    /* By default, this sketch routes the OVERRUN interrupt to INT1. */
-    g_int_stats.overrun++;
-    g_int_stats.total++;
-    g_ints_fired++;
-    /* TODO: Toggle an LED! */
-}
-
-/** Interrupt service routine for INT2 events. */
-void int2_isr(void)
-{
-    /* By default, this sketch routes the DATA_READY interrupt to INT2. */
-    g_int_stats.data_ready++;
-    g_int_stats.total++;
-    g_ints_fired++;
-    /* TODO: Toggle an LED! */
-}
-
-/** Configures the HW interrupts on the ADXL343 and the target MCU. */
-void config_interrupts(void)
-{
-  /* NOTE: Once an interrupt fires on the ADXL you can read a register
-   *  to know the source of the interrupt, but since this would likely
-   *  happen in the 'interrupt context' performing an I2C read is a bad
-   *  idea since it will block the device from handling other interrupts
-   *  in a timely manner.
-   *
-   *  The best approach is to try to make use of only two interrupts on
-   *  two different interrupt pins, so that when an interrupt fires, based
-   *  on the 'isr' function that is called, you already know the int source.
-   */
-
-  /* Attach interrupt inputs on the MCU. */
-  pinMode(D7, OUTPUT);
-  pinMode(INPUT_PIN_INT1, INPUT);
-  pinMode(INPUT_PIN_INT2, INPUT);
-  attachInterrupt(digitalPinToInterrupt(INPUT_PIN_INT1), int1_isr, RISING);
-  attachInterrupt(digitalPinToInterrupt(INPUT_PIN_INT2), int2_isr, RISING);
-
-  /* Enable interrupts on the accelerometer. */
-  g_int_config_enabled.bits.overrun    = false;    /* Set the INT1 */
-  g_int_config_enabled.bits.watermark  = false;
-  g_int_config_enabled.bits.freefall   = false;
-  g_int_config_enabled.bits.inactivity = false;
-  g_int_config_enabled.bits.activity   = true;
-  g_int_config_enabled.bits.double_tap = false;
-  g_int_config_enabled.bits.single_tap = false;
-  g_int_config_enabled.bits.data_ready = false;    /* Set to INT2 */
-  accel.enableInterrupts(g_int_config_enabled);
-
-  /* Map specific interrupts to one of the two INT pins. */
-  g_int_config_map.bits.overrun    = ADXL343_INT1;
-  g_int_config_map.bits.watermark  = ADXL343_INT1;
-  g_int_config_map.bits.freefall   = ADXL343_INT1;
-  g_int_config_map.bits.inactivity = ADXL343_INT1;
-  g_int_config_map.bits.activity   = ADXL343_INT1;
-  g_int_config_map.bits.double_tap = ADXL343_INT1;
-  g_int_config_map.bits.single_tap = ADXL343_INT1;
-  g_int_config_map.bits.data_ready = ADXL343_INT2;
-  accel.mapInterrupts(g_int_config_map);
-}
-
-
-SensirionI2CSen5x sen5x;
-
-
-void printSerialNumber() {
-  uint16_t error;
-  char errorMessage[256];
-  unsigned char serialNumber[32];
-  uint8_t serialNumberSize = 32;
-
-  error = sen5x.getSerialNumber(serialNumber, serialNumberSize);
-  if (error) {
-      Serial.print("Error trying to execute getSerialNumber(): ");
-      errorToString(error, errorMessage, 256);
-      Serial.println(errorMessage);
-  } else {
-      Serial.print("SerialNumber:");
-      Serial.println((char*)serialNumber);
-  }
-}
-
-
-
-void setup(void)
-{
-  Serial.begin(9600);
-  while (!Serial);
-  Serial.println("ADXL343 Interrupt Tester"); Serial.println("");
-
-  Particle.variable("Motion",g_ints_fired);
-
-  Wire.begin();
-
-  sen5x.begin(Wire);
-
-  uint16_t error;
-  char errorMessage[256];
-  error = sen5x.deviceReset();
-  if (error) {
-        Serial.print("Error trying to execute deviceReset(): ");
-        errorToString(error, errorMessage, 256);
-        Serial.println(errorMessage);
-  }
-
-  /* Initialise the sensor */
-  if(!accel.begin())
+  // Use lipo.begin() to initialize the BQ27441-G1A and confirm that it's
+  // connected and communicating.
+  if (!lipo.begin()) // begin() will return true if communication is successful
   {
-    /* There was a problem detecting the ADXL343 ... check your connections */
-    Serial.println("Ooops, no ADXL343 detected ... Check your wiring!");
-    while(1);
+	// If communication fails, print an error message and loop forever.
+    Serial.println("Error: Unable to communicate with BQ27441.");
+    Serial.println("  Check wiring and try again.");
+    Serial.println("  (Battery must be plugged into Battery Babysitter!)");
+    while (1) ;
   }
-
-  /* Set the range to whatever is appropriate for your project */
-  accel.setRange(ADXL343_RANGE_2_G);
-  // displaySetRange(ADXL343_RANGE_8_G);
-  // displaySetRange(ADXL343_RANGE_4_G);
-  // displaySetRange(ADXL343_RANGE_2_G);
-
-
-  /* Configure the HW interrupts. */
-  config_interrupts();
-
-  Serial.println("ADXL343 init complete. Waiting for INT activity.");
-
+  Serial.println("Connected to BQ27441!");
   
+  // Uset lipo.setCapacity(BATTERY_CAPACITY) to set the design capacity
+  // of your battery.
+  lipo.setCapacity(BATTERY_CAPACITY);
 }
 
-void loop(void)
+void printBatteryStats()
 {
-  /* Get a new sensor event */
-  //sensors_event_t event;
-  //accel.getEvent(&event);
-  delay(10);
+  // Read battery stats from the BQ27441-G1A
+  unsigned int soc = lipo.soc();  // Read state-of-charge (%)
+  unsigned int volts = lipo.voltage(); // Read battery voltage (mV)
+  int current = lipo.current(AVG); // Read average current (mA)
+  unsigned int fullCapacity = lipo.capacity(FULL); // Read full capacity (mAh)
+  unsigned int capacity = lipo.capacity(REMAIN); // Read remaining capacity (mAh)
+  int power = lipo.power(); // Read average power draw (mW)
+  int health = lipo.soh(); // Read state-of-health (%)
 
-  while (g_ints_fired) {
-      Serial.println("INT detected!");
-      Serial.print("\tOVERRUN Count:    "); Serial.println(g_int_stats.overrun, DEC);
-      Serial.print("\tDATA_READY Count: "); Serial.println(g_int_stats.data_ready, DEC);
+  // Now print out those values:
+  String toPrint = String(soc) + "% | ";
+  toPrint += String(volts) + " mV | ";
+  toPrint += String(current) + " mA | ";
+  toPrint += String(capacity) + " / ";
+  toPrint += String(fullCapacity) + " mAh | ";
+  toPrint += String(power) + " mW | ";
+  toPrint += String(health) + "%";
+  
+  Serial.println(toPrint);
+}
 
-      /* Decrement the unhandled int counter. */
-      g_ints_fired--;
+
+
+void setup() {
+    //config_interrupts(void);
+    //Current_State = Idle;
+    pinMode(GPS_ENA_Pin,OUTPUT);
+    pinMode(Accel_ENA_Pin,OUTPUT);
+    digitalWrite(GPS_ENA_Pin,HIGH);
+    digitalWrite(Accel_ENA_Pin,HIGH);
+    Serial.begin(9600);
+    setupBQ27441();
+    Wire.begin();
+
+
+}
+
+
+
+void loop() {
+
+    /*
+    switch (Current_State)
+    {
+    case Idle:
+
+        if(Moving True){
+
+
+        }
+
+    break;
+
+    case Run:
+
+    break;
+
+    case Test:
+
+    break;
+    
+    default:
+        break;
+    }
+    */
+
+  printBatteryStats();
+  delay(1000);
+
+  byte error, address;
+  int nDevices;
+ 
+  Serial.println("Scanning...");
+ 
+  nDevices = 0;
+  for(address = 1; address < 127; address++ )
+  {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+ 
+    if (error == 0)
+    {
+      Serial.print("I2C device found at address 0x");
+      if (address<16)
+        Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("  !");
+ 
+      nDevices++;
+    }
+    else if (error==4)
+    {
+      Serial.print("Unknown error at address 0x");
+      if (address<16)
+        Serial.print("0");
+      Serial.println(address,HEX);
+    }    
   }
-
-  printSerialNumber();
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("done\n");
+ 
+  delay(5000);           // wait 5 seconds for next scan
 
 }
