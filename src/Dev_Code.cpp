@@ -17,22 +17,29 @@
 #include "SensirionI2CSen5x.h"
 #include "SparkFunBQ27441.h"
 #include "BQ27441_Definitions.h"
+#include "Motion_Detect.h"
 
+/*
+class Motion {
+  private:
+      Adafruit_ADXL343 accel;
+  
+  public:
+      void setRange(adxl34x_range_t range) {
+          accel.setRange(range);
+      }
+  
+      void setDataRate(adxl3xx_dataRate_t rate) {
+          accel.setDataRate(rate);
+      }
+  };
+*/
 
-SYSTEM_MODE(AUTOMATIC);
+SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
+Motion Accel1;
 
-enum System_State {
-    Idle,
-    Run,
-    Test
-};
-
-System_State Current_State;
-
-const int GPS_ENA_Pin = D8;
-const int Accel_ENA_Pin = D7;
 
 const unsigned int BATTERY_CAPACITY = 850; // e.g. 850mAh battery
 
@@ -55,7 +62,7 @@ void setupBQ27441(void)
   lipo.setCapacity(BATTERY_CAPACITY);
 }
 
-void printBatteryStats()
+int printBatteryStats()
 {
   // Read battery stats from the BQ27441-G1A
   unsigned int soc = lipo.soc();  // Read state-of-charge (%)
@@ -76,93 +83,32 @@ void printBatteryStats()
   toPrint += String(health) + "%";
   
   Serial.println(toPrint);
+  return volts;
 }
 
 
+const int Pwr_Enable = D7;
 
-void setup() {
-    //config_interrupts(void);
-    //Current_State = Idle;
-    pinMode(GPS_ENA_Pin,OUTPUT);
-    pinMode(Accel_ENA_Pin,OUTPUT);
-    digitalWrite(GPS_ENA_Pin,HIGH);
-    digitalWrite(Accel_ENA_Pin,HIGH);
-    Serial.begin(9600);
-    setupBQ27441();
-    Wire.begin();
-
-
+void setup(void)
+{
+  Serial.begin(9600);
+  setupBQ27441();
+  Accel1.Set_ID(12345);
+  Accel1.Initalize(0x53);
+  Accel1.setDataRate(ADXL343_DATARATE_3200_HZ);
+  Accel1.setRange(ADXL34X_RANGE_4_G);
+  pinMode(Pwr_Enable,OUTPUT);
+  digitalWrite(Pwr_Enable,LOW);
+  delay(2000);
+  digitalWrite(Pwr_Enable,HIGH);
+  while (!Serial);
+  Serial.println("");
 }
 
-
-
-void loop() {
-
-    /*
-    switch (Current_State)
-    {
-    case Idle:
-
-        if(Moving True){
-
-
-        }
-
-    break;
-
-    case Run:
-
-    break;
-
-    case Test:
-
-    break;
-    
-    default:
-        break;
-    }
-    */
-
+void loop(void)
+{
   printBatteryStats();
+  Accel1.XYZ_Data();
   delay(1000);
-
-  byte error, address;
-  int nDevices;
- 
-  Serial.println("Scanning...");
- 
-  nDevices = 0;
-  for(address = 1; address < 127; address++ )
-  {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
- 
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println("  !");
- 
-      nDevices++;
-    }
-    else if (error==4)
-    {
-      Serial.print("Unknown error at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.println(address,HEX);
-    }    
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
- 
-  delay(5000);           // wait 5 seconds for next scan
-
 }
+
