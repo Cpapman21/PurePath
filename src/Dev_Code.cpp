@@ -19,26 +19,10 @@
 #include "BQ27441_Definitions.h"
 #include "Motion_Detect.h"
 
-/*
-class Motion {
-  private:
-      Adafruit_ADXL343 accel;
-  
-  public:
-      void setRange(adxl34x_range_t range) {
-          accel.setRange(range);
-      }
-  
-      void setDataRate(adxl3xx_dataRate_t rate) {
-          accel.setDataRate(rate);
-      }
-  };
-*/
-
 SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 SerialLogHandler logHandler(LOG_LEVEL_INFO);
-Motion Accel1;
+//Motion Accel1;
 
 
 const unsigned int BATTERY_CAPACITY = 850; // e.g. 850mAh battery
@@ -87,7 +71,9 @@ int printBatteryStats()
 }
 
 
-const int Pwr_Enable = D7;
+Motion Accel1;
+
+
 
 void setup(void)
 {
@@ -95,20 +81,16 @@ void setup(void)
   setupBQ27441();
   Accel1.Set_ID(12345);
   Accel1.Initalize(0x53);
-  Accel1.setDataRate(ADXL343_DATARATE_3200_HZ);
-  Accel1.setRange(ADXL34X_RANGE_4_G);
-  pinMode(Pwr_Enable,OUTPUT);
-  digitalWrite(Pwr_Enable,LOW);
   delay(2000);
-  digitalWrite(Pwr_Enable,HIGH);
-  while (!Serial);
-  Serial.println("");
+  Serial.print("Begin Program");
 }
 
 void loop(void)
 {
-  printBatteryStats();
-  Accel1.XYZ_Data();
-  delay(1000);
+  Accel1.Motion_Detect();
+  delay(100);
+  if(Accel1.Moving=true){
+    Serial.print("Starting Data Streaming!");
+  }
 }
 
