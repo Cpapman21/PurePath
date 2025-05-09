@@ -70,9 +70,10 @@ int printBatteryStats()
   return volts;
 }
 
+void printCurrentTime();
 
 Motion Accel1;
-
+PCF85063A global_timer;
 
 
 void setup(void)
@@ -82,6 +83,9 @@ void setup(void)
   Accel1.Set_ID(12345);
   Accel1.Initalize(0x53);
   delay(2000);
+  global_timer.setTime(4,25,24);
+  global_timer.setDate(0,14,5,2025);
+  printCurrentTime();
   Serial.print("Begin Program");
 }
 
@@ -94,3 +98,36 @@ void loop(void)
   }
 }
 
+void printCurrentTime() {
+  switch( global_timer.getWeekday() )
+  {
+    case 0:
+      Serial.print("Sunday , ");
+      break;
+    case 1:
+      Serial.print("Monday , ");
+      break;
+    case 2:
+      Serial.print("Tuesday , ");
+      break;
+    case 3:
+      Serial.print("Wednesday , ");
+      break;
+    case 4:
+      Serial.print("Thursday , ");
+      break;
+    case 5:
+      Serial.print("Friday , ");
+      break;
+    case 6:
+      Serial.print("Saturday , ");
+      break;
+  }
+
+  Serial.print(global_timer.getDay()); Serial.print(".");
+  Serial.print(global_timer.getMonth()); Serial.print(".");
+  Serial.print(global_timer.getYear()); Serial.print(". ");
+  Serial.print(global_timer.getHour()); Serial.print(":");
+  Serial.print(global_timer.getMinute()); Serial.print(":");
+  Serial.println(global_timer.getSecond());
+}
