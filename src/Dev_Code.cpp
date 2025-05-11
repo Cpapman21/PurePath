@@ -78,11 +78,11 @@ PCF85063A global_timer;
 
 void setup(void)
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  Serial.print("Starting!");
   //setupBQ27441();
   Accel1.Set_ID(12345);
   Accel1.Initalize(0x53);
-  delay(2000);
   //global_timer.setTime(4,25,24);
   //global_timer.setDate(0,14,5,2025);
   //printCurrentTime();
@@ -91,8 +91,8 @@ void setup(void)
 
 void loop(void)
 {
-  Accel1.Motion_Detect();
-  delay(100);
+  Serial.print("wtf");
+  Accel1.Motion_Detect(m_count);
 
 }
 

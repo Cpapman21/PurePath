@@ -20,6 +20,8 @@
 const int Pwr_Enable = D7;
 const int INPUT_PIN_INT1 = D6;
 const int INPUT_PIN_INT2 = D5;       // Connect this to INT1 or INT2
+extern uint32_t m_count;
+extern bool trigger;
 
 class Motion {
     private:
@@ -31,6 +33,10 @@ class Motion {
         void setDataRate(adxl3xx_dataRate_t rate);
         void Initalize(int I2C_add);
         void XYZ_Data();
-        void Motion_Detect();
+        void Motion_Detect(int MC_Tracker);
         bool Moving;
-    };
+        void (*handle)();
+};
+
+
+void MC_Counter();

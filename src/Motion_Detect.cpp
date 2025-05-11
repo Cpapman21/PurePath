@@ -3,13 +3,21 @@
 #include "Adafruit_ADXL343.h"
 #include "Particle.h"
 
-int Motion_Count;
+uint32_t m_count = 0;
+bool trigger = false;
+
+void MC_Counter() {
+
+    m_count++;
+    trigger = true;
+
+}
 
 void Motion::Initalize(int I2C_add) {
     pinMode(Pwr_Enable,OUTPUT);
     pinMode(INPUT_PIN_INT1, INPUT);
     digitalWrite(Pwr_Enable,HIGH);
-    Motion_Count = 0;
+    attachInterrupt(digitalPinToInterrupt(INPUT_PIN_INT1), MC_Counter , RISING);
     Moving = false;
     delay(500);
     accel.begin(I2C_add);
@@ -60,28 +68,26 @@ void Motion::XYZ_Data() {
 
 
 
-void Motion::Motion_Detect() {
-    int State_Bit;
-    while (Motion_Count < 100){
-        if (digitalRead(INPUT_PIN_INT1 ) == HIGH) {
+void Motion::Motion_Detect(int MC_Tracker) {
+    while (MC_Tracker < 100){
+        if (trigger=true) {
             uint8_t int_source = accel.readRegister(REG_INT_SOURCE);
             if (int_source & 0x10) {
                 Serial.println("Activity detected!");
-                Motion_Count++;
-                Serial.println(Motion_Count);
-                delay(100);
+                MC_Tracker++;
+                Serial.println(MC_Tracker);
+                trigger = false;
             }   
         }
         
         else
             Serial.print("Idle");
-            delay(100);
     }
 
-    if(Motion_Count == 100) {
+    if(MC_Tracker == 100) {
         Serial.println("Ok we are moving! Lets start sending data");
-        Motion_Count = 0;
-        Moving = true;
+        MC_Tracker = 0;
+        trigger = false;
     }
 
 
