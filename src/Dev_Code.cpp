@@ -18,114 +18,51 @@
 #include "SparkFunBQ27441.h"
 #include "BQ27441_Definitions.h"
 #include "Motion_Detect.h"
+#include "SparkFun_u-blox_GNSS_Arduino_Library.h"
+#include <Wire.h> //Needed for I2C to GPS
 
 SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
-SerialLogHandler logHandler(LOG_LEVEL_INFO);
+SFE_UBLOX_GNSS Test_GPS;
 //Motion Accel1;
-
-
 const unsigned int BATTERY_CAPACITY = 850; // e.g. 850mAh battery
-
-void setupBQ27441(void)
-{
-  // Use lipo.begin() to initialize the BQ27441-G1A and confirm that it's
-  // connected and communicating.
-  if (!lipo.begin()) // begin() will return true if communication is successful
-  {
-	// If communication fails, print an error message and loop forever.
-    Serial.println("Error: Unable to communicate with BQ27441.");
-    Serial.println("  Check wiring and try again.");
-    Serial.println("  (Battery must be plugged into Battery Babysitter!)");
-    while (1) ;
-  }
-  Serial.println("Connected to BQ27441!");
-  
-  // Uset lipo.setCapacity(BATTERY_CAPACITY) to set the design capacity
-  // of your battery.
-  lipo.setCapacity(BATTERY_CAPACITY);
-}
-
-int printBatteryStats()
-{
-  // Read battery stats from the BQ27441-G1A
-  unsigned int soc = lipo.soc();  // Read state-of-charge (%)
-  unsigned int volts = lipo.voltage(); // Read battery voltage (mV)
-  int current = lipo.current(AVG); // Read average current (mA)
-  unsigned int fullCapacity = lipo.capacity(FULL); // Read full capacity (mAh)
-  unsigned int capacity = lipo.capacity(REMAIN); // Read remaining capacity (mAh)
-  int power = lipo.power(); // Read average power draw (mW)
-  int health = lipo.soh(); // Read state-of-health (%)
-
-  // Now print out those values:
-  String toPrint = String(soc) + "% | ";
-  toPrint += String(volts) + " mV | ";
-  toPrint += String(current) + " mA | ";
-  toPrint += String(capacity) + " / ";
-  toPrint += String(fullCapacity) + " mAh | ";
-  toPrint += String(power) + " mW | ";
-  toPrint += String(health) + "%";
-  
-  Serial.println(toPrint);
-  return volts;
-}
-
-void printCurrentTime();
+long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
 
 Motion Accel1;
-PCF85063A global_timer;
 
-
-void setup(void)
-{
+void setup() {
   Serial.begin(115200);
-  Serial.print("Starting!");
-  //setupBQ27441();
-  Accel1.Set_ID(12345);
-  Accel1.Initalize(0x53);
-  //global_timer.setTime(4,25,24);
-  //global_timer.setDate(0,14,5,2025);
-  //printCurrentTime();
-  Serial.print("Begin Program");
-}
+  Wire.begin();
 
-void loop(void)
-{
-  Serial.print("wtf");
-  Accel1.Motion_Detect(m_count);
+  Serial.println("Initializing GPS...");
 
-}
-
-void printCurrentTime() {
-  switch( global_timer.getWeekday() )
-  {
-    case 0:
-      Serial.print("Sunday , ");
-      break;
-    case 1:
-      Serial.print("Monday , ");
-      break;
-    case 2:
-      Serial.print("Tuesday , ");
-      break;
-    case 3:
-      Serial.print("Wednesday , ");
-      break;
-    case 4:
-      Serial.print("Thursday , ");
-      break;
-    case 5:
-      Serial.print("Friday , ");
-      break;
-    case 6:
-      Serial.print("Saturday , ");
-      break;
+  if (Test_GPS.begin() == false) {
+    Serial.println("GNSS not detected. Check wiring.");
   }
 
-  Serial.print(global_timer.getDay()); Serial.print(".");
-  Serial.print(global_timer.getMonth()); Serial.print(".");
-  Serial.print(global_timer.getYear()); Serial.print(". ");
-  Serial.print(global_timer.getHour()); Serial.print(":");
-  Serial.print(global_timer.getMinute()); Serial.print(":");
-  Serial.println(global_timer.getSecond());
+  Test_GPS.setI2COutput(COM_TYPE_UBX); // Use UBX binary protocol
+  Test_GPS.setNavigationFrequency(1); // 1Hz update rate
+
+  Serial.println("GPS Initialized.");
 }
+
+void loop() {
+  // Update location data
+  long latitude = Test_GPS.getLatitude();
+  long longitude = Test_GPS.getLongitude();
+  int32_t altitude = Test_GPS.getAltitude();
+  uint8_t sats = Test_GPS.getSIV(); // Satellites in view
+
+  Serial.print("Lat: ");
+  Serial.print(latitude / 10000000.0, 7);
+  Serial.print(", Lon: ");
+  Serial.print(longitude / 10000000.0, 7);
+  Serial.print(", Alt: ");
+  Serial.print(altitude / 1000.0);
+  Serial.print(" m, Sats: ");
+  Serial.println(sats);
+  Serial.print("FUCK");
+
+  delay(1000);
+}
+

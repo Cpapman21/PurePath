@@ -7,10 +7,8 @@ uint32_t m_count = 0;
 bool trigger = false;
 
 void MC_Counter() {
-
     m_count++;
     trigger = true;
-
 }
 
 void Motion::Initalize(int I2C_add) {
@@ -68,27 +66,29 @@ void Motion::XYZ_Data() {
 
 
 
-void Motion::Motion_Detect(int MC_Tracker) {
-    while (MC_Tracker < 100){
+bool Motion::Motion_Detect() {
+    while (m_count < 100){
         if (trigger=true) {
             uint8_t int_source = accel.readRegister(REG_INT_SOURCE);
             if (int_source & 0x10) {
                 Serial.println("Activity detected!");
-                MC_Tracker++;
-                Serial.println(MC_Tracker);
+                m_count++;
+                Serial.println(m_count);
                 trigger = false;
             }   
         }
         
         else
             Serial.print("Idle");
+            Moving = false;
     }
 
-    if(MC_Tracker == 100) {
+    if(m_count == 100) {
         Serial.println("Ok we are moving! Lets start sending data");
-        MC_Tracker = 0;
+        m_count = 0;
         trigger = false;
+        Moving = true;
     }
 
-
+    return Moving;
 }

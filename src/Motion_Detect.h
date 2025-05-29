@@ -33,7 +33,7 @@ class Motion {
         void setDataRate(adxl3xx_dataRate_t rate);
         void Initalize(int I2C_add);
         void XYZ_Data();
-        void Motion_Detect(int MC_Tracker);
+        bool Motion_Detect();
         bool Moving;
         void (*handle)();
 };
