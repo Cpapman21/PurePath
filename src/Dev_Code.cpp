@@ -1,68 +1,75 @@
-/* 
- * Project myProject
- * Author: Your Name
- * Date: 
- * For comprehensive documentation and examples, please visit:
- * https://docs.particle.io/firmware/best-practices/firmware-template/
- */
 
-// Include Particle Device OS APIs
+
+
+// This #include statement was automatically added by the Particle IDE.
 #include "Particle.h"
-#include "Adafruit_ADXL343.h"
-#include "Adafruit_MPL3115A2.h"
-#include "Adafruit_Sensor.h"
-#include "PCF85063A.h"
-#include <Adafruit_BusIO_Register.h>
-#include "DFRobot_SHT20.h"
-#include "SensirionI2CSen5x.h"
-#include "SparkFunBQ27441.h"
-#include "BQ27441_Definitions.h"
+#include "Smog_Dog_Sensors.h"
 #include "Motion_Detect.h"
-#include "SparkFun_u-blox_GNSS_Arduino_Library.h"
-#include <Wire.h> //Needed for I2C to GPS
 
-SYSTEM_MODE(SEMI_AUTOMATIC);
-SYSTEM_THREAD(ENABLED);
-SFE_UBLOX_GNSS Test_GPS;
-//Motion Accel1;
-const unsigned int BATTERY_CAPACITY = 850; // e.g. 850mAh battery
-long lastTime = 0; //Tracks the passing of 2000ms (2 seconds)
+//Smog_Dog_Sensors Sensor;
+Motion Accel_1;
+Smog_Dog_Sensors Sensors;
 
-Motion Accel1;
+void setup()
+{
 
-void setup() {
   Serial.begin(115200);
-  Wire.begin();
-
-  Serial.println("Initializing GPS...");
-
-  if (Test_GPS.begin() == false) {
-    Serial.println("GNSS not detected. Check wiring.");
-  }
-
-  Test_GPS.setI2COutput(COM_TYPE_UBX); // Use UBX binary protocol
-  Test_GPS.setNavigationFrequency(1); // 1Hz update rate
-
-  Serial.println("GPS Initialized.");
-}
-
-void loop() {
-  // Update location data
-  long latitude = Test_GPS.getLatitude();
-  long longitude = Test_GPS.getLongitude();
-  int32_t altitude = Test_GPS.getAltitude();
-  uint8_t sats = Test_GPS.getSIV(); // Satellites in view
-
-  Serial.print("Lat: ");
-  Serial.print(latitude / 10000000.0, 7);
-  Serial.print(", Lon: ");
-  Serial.print(longitude / 10000000.0, 7);
-  Serial.print(", Alt: ");
-  Serial.print(altitude / 1000.0);
-  Serial.print(" m, Sats: ");
-  Serial.println(sats);
-  Serial.print("FUCK");
-
   delay(1000);
+  Wire.begin();
+  Sensors.SE55_Initalize();
+
+ 
 }
 
+void loop()
+{
+  Sensors.S55_Data();
+  Serial.println(Sensors.ambientTemperature);
+}
+
+
+void tryMeFirst() {
+	//File myFile;
+
+	// Initialize the library
+	//if (!sd.begin(chipSelect1, SD_SCK_MHZ(4))) {
+		//Serial.println("failed to open card");
+		//return;
+	//}
+
+
+
+  
+
+	// open the file for write at end like the "Native SD library"
+  /*
+	if (!myFile.open("test.txt", O_RDWR | O_CREAT | O_AT_END)) {
+		Serial.println("opening test.txt for write failed");
+		return;
+	}
+	// if the file opened okay, write to it:
+	Serial.print("Writing to test.txt...");
+	myFile.println("testing 1, 2, 3.");
+	myFile.printf("fileSize: %d\n", myFile.fileSize());
+
+	// close the file:
+	myFile.close();
+	Serial.println("done.");
+
+	// re-open the file for reading:
+	if (!myFile.open("test.txt", O_READ)) {
+		Serial.println("opening test.txt for read failed");
+		return;
+	}
+	Serial.println("test.txt content:");
+
+	// read from the file until there's nothing else in it:
+	int data;
+	while ((data = myFile.read()) >= 0) {
+		Serial.write(data);
+	}
+	// close the file:
+	myFile.close();
+  */
+
+}

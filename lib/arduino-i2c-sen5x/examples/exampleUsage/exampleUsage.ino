@@ -205,7 +205,8 @@ void loop() {
         Serial.print("Error trying to execute readMeasuredValues(): ");
         errorToString(error, errorMessage, 256);
         Serial.println(errorMessage);
-    } else {
+    } 
+    else {
         Serial.print("MassConcentrationPm1p0:");
         Serial.print(massConcentrationPm1p0);
         Serial.print("\t");
