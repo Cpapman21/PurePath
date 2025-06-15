@@ -157,3 +157,43 @@ void Smog_Dog_Sensors::S55_Data() {
     }
     */
 }
+
+
+void Smog_Dog_Sensors::GPS_Initalize () {
+
+    if (myGPS.begin() == false) //Connect to the Ublox module using Wire port
+  {
+    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
+    while (1){
+        Serial.print("Cant Connect");
+        delay(1000);
+    }
+  }
+
+  myGPS.setI2COutput(COM_TYPE_UBX); //Set the I2C port to output UBX only (turn off NMEA noise)
+  myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+}
+
+
+void Smog_Dog_Sensors::GPS_Data() {
+
+    latitude = myGPS.getLatitude();
+    Serial.print(F("Lat: "));
+    Serial.print(latitude);
+
+    longitude = myGPS.getLongitude();
+    Serial.print(F(" Long: "));
+    Serial.print(longitude);
+    Serial.print(F(" (degrees * 10^-7)"));
+
+    altitude = myGPS.getAltitude();
+    Serial.print(F(" Alt: "));
+    Serial.print(altitude);
+    Serial.print(F(" (mm)"));
+
+    SIV = myGPS.getSIV();
+    Serial.print(F(" SIV: "));
+    Serial.print(SIV);
+    delay(1000);
+
+}

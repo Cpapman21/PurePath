@@ -17,13 +17,14 @@ void setup()
   delay(1000);
   Wire.begin();
   Sensors.SE55_Initalize();
+  Sensors.GPS_Initalize();
 
- 
 }
 
 void loop()
 {
   Sensors.S55_Data();
+  Sensors.GPS_Data();
   Serial.println(Sensors.ambientTemperature);
 }
 
