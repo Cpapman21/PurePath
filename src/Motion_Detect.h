@@ -17,8 +17,8 @@
 #define BIT_MEASURE         0x08  // Bit 3: Enable measurement mode
 #define BIT_ACT_AC_XYZ      0x70  // Bits 6–4: Enable AC-coupled activity detect on X, Y, Z
 
-const int Pwr_Enable = D7;
-const int INPUT_PIN_INT1 = D6;
+const int Pwr_Enable = D3;
+//const int INPUT_PIN_INT1 = D6;
 const int INPUT_PIN_INT2 = D5;       // Connect this to INT1 or INT2
 extern uint32_t m_count;
 extern bool trigger;
@@ -33,8 +33,8 @@ class Motion {
         void setDataRate(adxl3xx_dataRate_t rate);
         void Initalize(int I2C_add);
         void XYZ_Data();
-        bool Motion_Detect();
-        bool Moving;
+        void Motion_Detect();
+        int State;
         void (*handle)();
 };
 

@@ -6,20 +6,17 @@
 uint32_t m_count = 0;
 bool trigger = false;
 
+
 void MC_Counter() {
-    m_count++;
     trigger = true;
 }
 
 void Motion::Initalize(int I2C_add) {
     pinMode(Pwr_Enable,OUTPUT);
-    pinMode(INPUT_PIN_INT1, INPUT);
+    pinMode(INPUT_PIN_INT2, INPUT);
     digitalWrite(Pwr_Enable,HIGH);
-    attachInterrupt(digitalPinToInterrupt(INPUT_PIN_INT1), MC_Counter , RISING);
-    Moving = false;
-    delay(500);
-    accel.begin(I2C_add);
-    if(!(accel.begin())){
+    attachInterrupt(digitalPinToInterrupt(INPUT_PIN_INT2), MC_Counter , RISING);
+    if(!(accel.begin(I2C_add))){
         while (1)
         {
             Serial.print("Accel Not Detected Wiring Wrong!");
@@ -64,29 +61,15 @@ void Motion::XYZ_Data() {
     Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");
 }
 
-bool Motion::Motion_Detect() {
-    while (m_count < 100){
-        if (trigger=true) {
-            uint8_t int_source = accel.readRegister(REG_INT_SOURCE);
-            if (int_source & 0x10) {
-                Serial.println("Activity detected!");
-                m_count++;
-                Serial.println(m_count);
-                trigger = false;
-            }   
-        }
-        
-        else
-            Serial.print("Idle");
-            Moving = false;
+void Motion::Motion_Detect() {
+   
+    if (trigger=true) {
+        uint8_t int_source = accel.readRegister(REG_INT_SOURCE);
+        if (int_source & 0x10) {
+            Serial.println("Activity detected!");
+            m_count++;
+            Serial.println(m_count);
+            trigger = false; // Idel State
+        }   
     }
-
-    if(m_count == 100) {
-        Serial.println("Ok we are moving! Lets start sending data");
-        m_count = 0;
-        trigger = false;
-        Moving = true;
-    }
-
-    return Moving;
 }

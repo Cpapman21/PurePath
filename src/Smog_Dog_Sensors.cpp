@@ -158,6 +158,56 @@ void Smog_Dog_Sensors::S55_Data() {
     */
 }
 
+void Smog_Dog_Sensors::ADC_Initalize() {
+    if (!ads.begin()) {
+    Serial.println("Failed to initialize ADS.");
+    while (1);
+  }
+    //ads.setGain(ADS1015_REG_CONFIG_PGA_4_096V);
+    //ads.setDataRate(ADS1015_REG_CONFIG_DR_128SPS);
+    //ads.startADCReading(ADS1X15_REG_CONFIG_MUX_SINGLE_2, /*continuous=*/false);
+}
+
+void Smog_Dog_Sensors::NO2_Data() {
+
+    // Placeholder for NO2 data retrieval logic
+    // This function can be implemented to retrieve NO2 data from the sensor
+   if (!ads.conversionComplete()) {
+    return;
+  }
+
+  int16_t results = ads.getLastConversionResults();
+
+  Serial.print("Differential: "); Serial.print(results); Serial.print("("); Serial.print(ads.computeVolts(results)); Serial.println("V)");
+
+  // Start another conversion.
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_SINGLE_2, /*continuous=*/false);
+
+}
+
+void Smog_Dog_Sensors::CO_Data() {
+
+    // Placeholder for PM data retrieval logic
+    // This function can be implemented to retrieve PM data from the sensor
+    Serial.println("CO Data retrieval not implemented yet.");
+
+}
+
+void Smog_Dog_Sensors::O3_Data() {
+
+    // Placeholder for PM data retrieval logic
+    // This function can be implemented to retrieve PM data from the sensor
+    Serial.println("CO Data retrieval not implemented yet.");
+
+}
+
+void Smog_Dog_Sensors::H2S_Data() {
+
+    // Placeholder for PM data retrieval logic
+    // This function can be implemented to retrieve PM data from the sensor
+    Serial.println("H2S Data retrieval not implemented yet.");
+
+}
 
 void Smog_Dog_Sensors::GPS_Initalize () {
 
@@ -174,26 +224,24 @@ void Smog_Dog_Sensors::GPS_Initalize () {
   myGPS.saveConfiguration(); //Save the current settings to flash and BBR
 }
 
-
 void Smog_Dog_Sensors::GPS_Data() {
 
     latitude = myGPS.getLatitude();
-    Serial.print(F("Lat: "));
-    Serial.print(latitude);
+    //Serial.print(F("Lat: "));
+    //Serial.print(latitude);
 
     longitude = myGPS.getLongitude();
-    Serial.print(F(" Long: "));
-    Serial.print(longitude);
-    Serial.print(F(" (degrees * 10^-7)"));
+    //Serial.print(F(" Long: "));
+    //Serial.print(longitude);
+    //Serial.print(F(" (degrees * 10^-7)"));
 
     altitude = myGPS.getAltitude();
-    Serial.print(F(" Alt: "));
-    Serial.print(altitude);
-    Serial.print(F(" (mm)"));
+    //Serial.print(F(" Alt: "));
+    //Serial.print(altitude);
+    //Serial.print(F(" (mm)"));
 
     SIV = myGPS.getSIV();
-    Serial.print(F(" SIV: "));
-    Serial.print(SIV);
-    delay(1000);
+    //Serial.print(F(" SIV: "));
+    //Serial.print(SIV);
 
 }
