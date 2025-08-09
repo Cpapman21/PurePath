@@ -8,6 +8,7 @@
 #include "SdFat.h"
 #include "stdio.h"
 #include <chrono>
+#include <ctime>
 
 
 SYSTEM_THREAD(ENABLED);
@@ -19,6 +20,8 @@ Motion Accel_1;
 Motion* Accel_1_P = &Accel_1;
 Smog_Dog_Sensors  Sensors;
 Smog_Dog_Sensors* Sensors_P = &Sensors;
+TimeClass t;
+TimeClass *t_P = &t;
 
 void Motor_Enable();
 
@@ -41,6 +44,9 @@ unsigned long lastCheck = 0;          // Timer for IDLE checks
 unsigned long lastPublish = 0;        // Timer for data publish
 const unsigned long idleInterval = 200;   // 200ms check interval
 const unsigned long publishInterval = 1000; // 1 second for publish
+int Sim_temp, Sim_rh, Sim_ln, Sim_la, Sim_al;
+
+
 
 void setup()
 {
@@ -50,10 +56,10 @@ void setup()
   pinMode(D2,OUTPUT);
   digitalWrite(D2,LOW);
   delay(500);
-  //Sensors.SE55_Initalize();
-  //Sensors.GPS_Initalize();
-  //Accel_1.Set_ID(12345);
-  //Accel_1.Initalize(0x53);
+  Sensors.SE55_Initalize();
+  Sensors.GPS_Initalize();
+  Accel_1.Set_ID(12345);
+  Accel_1.Initalize(0x53);
   String name("Smog Dog");
   state = STATE_WAIT_CONNECTED;
   Particle.connect();
@@ -67,11 +73,10 @@ void loop()
   switch (state){
 
   case STATE_WAIT_CONNECTED: // Idle State
-    //Accel_1.Motion_Detect();
+    Accel_1.Motion_Detect();
     if(m_count < 100) {
       state = STATE_WAIT_CONNECTED;
-      m_count += 1;
-      delay(250);
+      //m_count += 1;
     }
     else if(m_count >= 100) {
       state = STATE_PUBLISH;
@@ -84,19 +89,34 @@ void loop()
     delay(250);
     digitalWrite(D2, LOW);
     delay(250);
-   
-    //Sensors.S55_Data();
-    //Sensors.GPS_Data();
+    Sensors.S55_Data();
+    Sensors.GPS_Data();
+    //Sim_temp = random(24, 75);
+    //Sim_rh = random(24,75);
+    //Sim_ln = random(0, 180);
+    //Sim_la = random(0, 90); 
+    //Sim_al = random(0, 300); 
 
-    payload = String::format("{\"temp\":%.1f,\"rh\":%.1f,\"ln\":%ld,\"la\":%ld,\"al\":%ld}", 
-    23.4 , 
-    69.60 , 
-    234.2, 
-    360.0, 
-    215.5
-      );
+    //payload = String::format("{\"temp\":%d,\"rh\":%d,\"ln\":%d,\"la\":%d,\"al\":%d,\"time\":%ld}", 
+    //Sim_temp ,
+    //Sim_rh , 
+    //Sim_ln, 
+    //Sim_la, 
+    //Sim_al,
+    //t_P->now()
+    //);
+
+    payload = String::format("{\"temp\":%f,\"rh\":%f,\"ln\":%ld,\"la\":%ld,\"al\":%ld,\"time\":%ld}", 
+    Sensors_P-> ambientTemperature,
+    Sensors_P-> ambientHumidity , 
+    Sensors_P-> longitude, 
+    Sensors_P-> latitude, 
+    Sensors_P-> altitude,
+    t_P->now()
+    );
 
     Particle.publish("Test_Load",payload);
+    Serial.println(t_P->now());
     delay(1000);
     state = STATE_PUBLISH;
     break;

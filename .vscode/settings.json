@@ -17,8 +17,8 @@
         "xhash": "cpp",
         "list": "cpp"
     },
-    "particle.firmwareVersion": "6.2.1",
+    "particle.firmwareVersion": "6.3.3",
     "particle.targetPlatform": "boron",
-    "particle.targetDevice": " e00fce686f40c738f47ff2cb",
+    "particle.targetDevice": "e00fce68ec392ae4e439c1c7",
     "C_Cpp.errorSquiggles": "disabled"
 }

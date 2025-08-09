@@ -227,17 +227,20 @@ void Smog_Dog_Sensors::GPS_Initalize () {
 void Smog_Dog_Sensors::GPS_Data() {
 
     latitude = myGPS.getLatitude();
-    //Serial.print(F("Lat: "));
-    //Serial.print(latitude);
+    Serial.print(F("Lat: "));
+    Serial.print(latitude);
+    Serial.println();
 
     longitude = myGPS.getLongitude();
-    //Serial.print(F(" Long: "));
-    //Serial.print(longitude);
+    Serial.print(F(" Long: "));
+    Serial.print(longitude);
+    Serial.println();
     //Serial.print(F(" (degrees * 10^-7)"));
 
     altitude = myGPS.getAltitude();
-    //Serial.print(F(" Alt: "));
-    //Serial.print(altitude);
+    Serial.print(F(" Alt: "));
+    Serial.print(altitude);
+    Serial.println();
     //Serial.print(F(" (mm)"));
 
     SIV = myGPS.getSIV();
